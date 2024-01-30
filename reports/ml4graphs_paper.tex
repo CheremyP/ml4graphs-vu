@@ -1,0 +1,176 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Cheremy Pongajow\inst{1}\orcidID{2647002}}
+%
+\authorrunning{C. Pongajow et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Vrije University of Amsterdam, De Boelelaan  1081 HV, NL 
+\email{ai@vu.nl}\\
+\url{https://vu.nl/en} }
+
+\title{Exploration of Graph Attention Networks for Graph Neural Networks}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+In this paper, we present the implementation of various 
+attention-based graph neural networks. Graph neural networks (GNNs) have shown
+promising results in various graph-related tasks such as node classification, 
+link prediction, and graph classification. However, traditional GNNs treat all 
+nodes equally and do not consider the importance of different nodes in the graph. 
+Attention mechanisms provide a solution to this problem by allowing GNNs to focus 
+on relevant nodes during message passing. In this paper, we explore different attention 
+mechanisms, including graph attention networks (GAT, GATv2 and GAtv3), to enhance the performance of GNNs 
+on graph-based tasks. We evaluate the proposed models on benchmark datasets and compare 
+their performance with traditional GNNs. Our experimental results demonstrate that attention-based 
+GNNs achieve similair or improved performance in terms of accuracy and convergence speed. Furthermore, 
+we provide an in-depth analysis of the learned attention weights to gain insights into 
+the importance of different nodes in the graph. Overall, our work contributes to the
+understanding and advancement of attention-based GNNs for graph-related tasks.
+
+\keywords{Graph Attenion Networks  \and Graph Neural Networks \and Attention Mechanism}
+\end{abstract}
+%
+%
+%
+\section{Introduction}
+Graphs are found everywhere in our daily lives, such as in social networks,
+transportation networks, scientific publication networks, and in the chemical
+domain. Graphs offer a multitude of information due to their expressive
+power. Graph neural networks (GNNs) aim to lelarn a level of representation 
+from the graph in a lower dimendinsonal representation space to apply 
+in downstream tasks sush as node classification, link prediction and 
+query and anwsering. 
+
+
+Graph convolutional neural networks (GCNs) are in particular a firmly 
+established architecture in the context of machine learning applied into graphs.
+
+
+Subsequent paragraphs, however, are indented.
+
+\subsubsection{Sample Heading (Third Level)} Only two levels of
+headings should be numbered. Lower level headings remain unnumbered;
+they are formatted as run-in headings.
+
+\paragraph{Sample Heading (Fourth Level)}
+The contribution should contain no more than four levels of
+headings. Table~\ref{tab1} gives a summary of all heading levels.
+
+\begin{table}
+\caption{Table captions should be placed above the
+tables.}\label{tab1}
+\begin{tabular}{|l|l|l|}
+\hline
+Heading level &  Example & Font size and style\\
+\hline
+Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
+1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
+2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
+3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
+4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\section{Methods}
+
+\section{Experiments}
+
+\subsection{Datasets}
+
+\section{Results}
+
+\section{Conclusion}
+
+
+\noindent Displayed equations are centered and set on a separate
+line.
+\begin{equation}
+x + y = z
+\end{equation}
+Please try to avoid rasterized images for line-art diagrams and
+schemas. Whenever possible, use vector graphics instead (see
+Fig.~\ref{fig1}).
+
+\begin{figure}
+\includegraphics[width=\textwidth]{fig1.eps}
+\caption{A figure caption is always placed below the illustration.
+Please note that short captions are centered, while long ones are
+justified by the macro package automatically.} \label{fig1}
+\end{figure}
+
+\begin{theorem}
+This is a sample theorem. The run-in heading is set in bold, while
+the following text appears in italics. Definitions, lemmas,
+propositions, and corollaries are styled the same way.
+\end{theorem}
+%
+% the environments 'definition', 'lemma', 'proposition', 'corollary',
+% 'remark', and 'example' are defined in the LLNCS documentclass as well.
+%
+\begin{proof}
+Proofs, examples, and remarks have the initial word in italics,
+while the following text appears in normal font.
+\end{proof}
+For citations of references, we prefer the use of square brackets
+and consecutive numbers. Citations using labels or the author/year
+convention are also acceptable. The following bibliography provides
+a sample reference list with entries for journal
+articles~\cite{ref_article1}, an LNCS chapter~\cite{ref_lncs1}, a
+book~\cite{ref_book1}, proceedings without editors~\cite{ref_proc1},
+and a homepage~\cite{ref_url1}. Multiple citations are grouped
+\cite{ref_article1,ref_lncs1,ref_book1},
+\cite{ref_article1,ref_book1,ref_proc1,ref_url1}.
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+% \bibliographystyle{splncs04}
+% \bibliography{mybibliography}
+%
+\begin{thebibliography}{8}
+\bibitem{ref_article1}
+Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
+
+\bibitem{ref_lncs1}
+Author, F., Author, S.: Title of a proceedings paper. In: Editor,
+F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
+Springer, Heidelberg (2016). \doi{10.10007/1234567890}
+
+\bibitem{ref_book1}
+Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
+Location (1999)
+
+\bibitem{ref_proc1}
+Author, A.-B.: Contribution title. In: 9th International Proceedings
+on Proceedings, pp. 1--2. Publisher, Location (2010)
+
+\bibitem{ref_url1}
+LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
+Oct 2017
+\end{thebibliography}
+\end{document}
