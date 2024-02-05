@@ -33,144 +33,203 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-In this paper, we present the implementation of various 
-attention-based graph neural networks. Graph neural networks (GNNs) have shown
+In this paper, we present the implementation of various graph neural networks (GNNs) and
+attention-based graph neural networks. GNNShave shown
 promising results in various graph-related tasks such as node classification, 
 link prediction, and graph classification. However, traditional GNNs treat all 
 nodes equally and do not consider the importance of different nodes in the graph. 
 Attention mechanisms provide a solution to this problem by allowing GNNs to focus 
 on relevant nodes during message passing. In this paper, we explore different attention 
-mechanisms, including graph attention networks (GAT, GATv2 and GAtv3), to enhance the performance of GNNs 
-on graph-based tasks. We evaluate the proposed models on benchmark datasets and compare 
+mechanisms, including graph attention networks (GAT, GATv2), to enhance the performance of GNNs 
+on graph-based tasks. We evaluate the proposed models on random split benchmark datasets and compare 
 their performance with traditional GNNs. Our experimental results demonstrate that attention-based 
-GNNs achieve similair or improved performance in terms of accuracy and convergence speed. Furthermore, 
+GNNs achieve similar in terms of accuracy. Furthermore, 
 we provide an in-depth analysis of the learned attention weights to gain insights into 
-the importance of different nodes in the graph. Overall, our work contributes to the
-understanding and advancement of attention-based GNNs for graph-related tasks.
+the importance of different nodes in the graph. 
 
-\keywords{Graph Attenion Networks  \and Graph Neural Networks \and Attention Mechanism}
+\keywords{Graph Attention Networks  \and Graph Neural Networks \and Attention Mechanism}
 \end{abstract}
 %
 %
 %
 \section{Introduction}
 Graphs are found everywhere in our daily lives, such as in social networks,
-transportation networks, scientific publication networks, and in the chemical
-domain. Graphs offer a multitude of information due to their expressive
-power. Graph neural networks (GNNs) aim to lelarn a level of representation 
-from the graph in a lower dimendinsonal representation space to apply 
-in downstream tasks sush as node classification, link prediction and 
-query and anwsering. 
+transportation networks, scientific publication networks, and molecular structures. Graphs offer a multitude of information due to their expressive
+power. Graph neural networks (GNNs) aim to learn a level of representation 
+from the graph in a lower dimensional representation space to apply 
+in downstream tasks such as node classification, link prediction and 
+query and answering. GNNs show impressive performance on these downstream tasks and have now been vastly adopted in the graph domain. Research on graphs adopted more inspiration from deep learning by applying graph convolutional neural networks (GCNs). Convolutional neural networks have shown tremendous performance in the domain of image processing. Kipf et al. have found promising results in applying convolutional techniques to graphs, although graphs have a more sparse structure compared to the regular grid structure of images \cite{Kipf2016}. Although the GCNs perform well, they, have limitations regarding fixed neighborhood aggregation \cite{magner2020fundamental}. In essence, this means that the aggregation function is applied uniformly across all nodes, ignoring the varying importance of the nodes. To address this limitation of assigning equal node importance Inspired by the self-attention mechanism, Veličković et al. (2018) developed the first graph attention network (GAT) to address some of the limitations of GCNs \cite{veličković2018graph} \cite{Vaswani2017}. The introduction of the self-attention mechanism in the model allows a learnable parameter to assign varying attention coefficients to the nodes which indicates the importance of each node. Recently more advances have been made by improving GAT with a subsequent adjustment called GATv2. 
+GATv2 uses a dynamic form of attention over the static form that is used in the original GAT \cite{veličković2018graph}\cite{Brody2021}. This limitation is addressed by
+modifying the order of operations. 
+
+In a recent study, the shortcomings of the evaluation of graph models come to the forefront \cite{Oleksandr}. This study highlighted that the empirical outcomes of graph benchmark datasets are highly dependent on the selected train/validation/test split. These findings suggest that the current literature may not be providing a fair and consistent basis for drawing comparisons between GNN architectures. This dependency raises concerns about current comparisons of GNN architectures in the current literature. The need for fairness and consistency becomes apparent to ensure insightful and unbiased assessment of GNN architectures. Therefore, this work aims to contribute to the evaluations and comparison of GAT and GATv2 by extending it with a fair benchmark comparison. Thereby, addressing the challenges in current benchmark evaluations and providing a meaningful understanding of the performance between GNNs on node classification. 
+
+\section{Background}
+\subsection{Graph Neural Networks}
+GNNs are popular architectures for downstream graph applications. The representation of these graphs can be represented as $G = (V,E)$, where $\lvert V \rvert$ is the number of nodes and $ \lvert E \rvert$ represents the number of edges. The adjacency matrix represents the connections between the nodes where it is defined as $ A \in \mathbb{R}^{NxN}$ (N: number of nodes). Where each $A_{ij}$ represent the undirected edge between node $A_{ij}$ with $1$ the presence of an edge and $0$ the absence. A feature or node embedding is described as $x_{i}$ for every node $i$ and the feature matrix is defined as $ X \in \mathbb{R}^{NxF}$ (F: number of features). A simple GNN can be represented as: 
+
+\begin{equation}
+    f(H^{(l)}, A) = \sigma(AH^{(l)W^{(l)}})
+\end{equation}
+
+Here $W^{(l)}$ represents a learnable weight matrix of the l-th layer in the network. The $\sigma$ is a non-linear activation function like a sigmoid or ReLU. A limitation of this model stems from non-normalized multiplication. By multiplying the adjacency matrix with the diagonal node degree matrix, this limitation gets addressed \cite{Kipf2016}. The normalization of the nodes needs to be symmetrical for the rows and columns, which gives $D^{-\frac{1}{2}}AD^{-\frac{1}{2}}$. This normalisation ensures that the eigenvalues are bounded to a range between 0 and 1, which prevents the numerical instabilities and exploding gradients \cite{Kipf2016}.  Combing the normalization with the previous equation results in the following: 
+
+\begin{equation}
+f(H^{(l)}, A) = \sigma(\hat{D}^{-\frac{1}{2}}\hat{A}\hat{D}^{-\frac{1}{2}}H^{(l)}W^{(l)})
+\end{equation}
+Note that $\hat{A}$, is $A$ added identity matrix I to include self-loops in the adjacency matrix. The addition of self-loops is commonly used as it allows for nodes to account for their features. Deriving the equation into vector form results in the following equation: 
+
+\begin{equation}
+    h(l+1)_vi = \sigma(\sum_{j=1}^{c_i} h(l)_vj * W(l))
+\end{equation}
+
+Here, the summation term shows the aggregation of the features of the neighbouring nodes of $v_i$. The coefficient of $c_{ij}$ are originated form the symmetrical normalized adjacency matrix $D^{-\frac{1}{2}}AD^{-\frac{1}{2}}$. As the equation shows it enables smooth aggregation of node embedding and prevents the numerical instabilities and exploding gradients. Each node contributes equally to the update of the normalized feature embeddings. However, this equal contribution may not be a desirable trait in the model as it can't account for variable node importance. Here is where the self-attention mechanism comes in. The self-attention mechanism was introduced in natural language processing (NLP) \cite{Vaswani2017}. The self-attention mechanism addresses the same problem in NLP as it adaptively assigns varying attention coefficients to words in a sentence based on their relevance.  These attention coefficients are learnable parameters and allow the model to focus on relevant words. The original self-attention is denoted as follows:
+
+\subsection{Scaled Dot-Product Attention}
+  \begin{equation}
+    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right) \mathbf{V}
+\end{equation}
+
+Here, the $Q, K, V $ represents the query, key and values matrices. A softmax is used with a scaling of the dimensions of the key vectors determining the amount of attention each key should attribute. The dividing of the dimensions helps in stabilizing the gradients. This self-attention mechanism allows the model to selectively assign varying importance to words in a sentence or text. This method has been proven effective in NLP and has been adopted in graph machine-learning models. In essence, these methods introduce the same concept applied to graphs. 
+
+\subsection{Graph Attention Networks}
+GATs are a popular GNN architecture \cite{Brody2021}. GATs work by computing a weighted average of the representations, achieved through a learned scoring mechanism.  This scoring function assigns scores to each edge in the graph by providing an importance score of the nodes to one another. The initial equation computes the attention coefficients in GATs are denoted as follows:
+
+\begin{equation}
+    e_{ij} = a(\mathbf{W}\mathbf{\tilde{h}}_i, \mathbf{W}\mathbf{\tilde{h}}_j)
+\end{equation}
+
+Where $e_{ij}$ are the attention coefficients which represent the importance of the features of the neighbour node j to the node i. Note that the computation is only done for $ j \in N_{i}$, where $N_{i}$ is the neighbourhood of the node \cite{veličković2018graph}. Subsequently, a softmax function is introduced for obtaining the normalized attention coefficients:
+
+\begin{equation}
+    \alpha_{ij} = \frac{\exp(\text{LeakyReLU}(\mathbf{\tilde{a}}^T [\mathbf{W}\mathbf{\tilde{h}}_i \,||\, \mathbf{W}\mathbf{\tilde{h}}_j]))}{\sum_{k \in \mathcal{N}_i} \exp(\text{LeakyReLU}(\mathbf{\tilde{a}}^T [\mathbf{W}\mathbf{\tilde{h}}_i \,||\, \mathbf{W}\mathbf{\tilde{h}}_k]))}
+\end{equation}
+
+This shows a single-layer attention mechanism with the addition of a non-linearity of the LeakyReLU \cite{veličković2018graph}. 
+Here, $^T$ represents the transposition and $||$ a concatenation of matrices. The normalized attention coefficients are 
+determined by the compatibility of node features, represented by the dot product with a learnable weight vector a. This allows for adaptive weighting of different neighbours based on their importance to the node \cite{veličković2018graph}.
+
+\subsection{Multi-head Attention}
+The final step in the attention mechanism is the aggregation of multiple attention layers. By using K independent attention mechanism with concatenation results in the following equation:
+
+\begin{equation}
+    \mathbf{h}'_i = \sigma\left( \big\|_{k=1}^{K} \sum_{j \in \mathcal{N}_i} \alpha_{kij} \mathbf{W}_k \mathbf{\tilde{h}}_j \right)
+\end{equation}
+
+This equation depicts the aggregation of the multiple attention heads resulting in the representation $h^{'}_{j}$. The multi-head attention stabilizes the learning process and benefits performance \cite{Vaswani2017}. In the final layer of the multi-head attention concatenation of the heads isn't sensible \cite{Vaswani2017} \cite{Brody2021}. Therefore, an averaging is applied and the non-linearity is delayed in the order of operations.
+
+\begin{equation}
+    \mathbf{h}'_i = \sigma\left( \frac{1}{K} \sum_{k=1}^{K} \sum_{j \in \mathcal{N}_i} \alpha_{kij} \mathbf{W}_k \mathbf{\tilde{h}}_j \right)
+\end{equation}
+
+The graph attention later in graphs introduced by Veličković et al. (2018) addresses several issues that were present in prior works \cite{veličković2018graph}.  It is computationally more efficient as it allows for parallel computing of the attention heads. In addition, it allows the model to adaptively assign importance to nodes. Furthermore, other than fixed-size neighbourhood methods it works on the entirety of the neighbourhood. However, a limitation of the GAT is that it is unable to leverage sparse matrix operations, which results in exponential memory complexity.  
+
+\subsection{GAT vs GATv2}
+The GAT faces some problems as it utilises static attention over dynamic attention. The static form of attention restricts the model from capturing node importance across different queries. 
+
+% Standard GAT equation
+\begin{equation}
+    \text{GAT: } \hspace{5mm} e(\mathbf{h}_i, \mathbf{h}_j) = \text{LeakyReLU}(\mathbf{a}^T \cdot [\mathbf{W}\mathbf{h}_i \,||\, \mathbf{W}\mathbf{h}_j])
+\end{equation}
+
+% GATv2 equation
+\begin{equation}
+    \text{GATv2: } \hspace{5mm} e(\mathbf{h}_i, \mathbf{h}_j) = \mathbf{a}^T \cdot \text{LeakyReLU}(\mathbf{W} \cdot [\mathbf{h}_i \,||\, \mathbf{h}_j])
+\end{equation}
+
+Here, the GATv2 equation modifies the order of operations to enable the layers to compute dynamic attention. By applying the learnable attention matrix differently after the non-linearity it allows to adapt to different query-key relations. 
 
 
-Graph convolutional neural networks (GCNs) are in particular a firmly 
-established architecture in the context of machine learning applied into graphs.
-
-
-Subsequent paragraphs, however, are indented.
-
-\subsubsection{Sample Heading (Third Level)} Only two levels of
-headings should be numbered. Lower level headings remain unnumbered;
-they are formatted as run-in headings.
-
-\paragraph{Sample Heading (Fourth Level)}
-The contribution should contain no more than four levels of
-headings. Table~\ref{tab1} gives a summary of all heading levels.
-
-\begin{table}
-\caption{Table captions should be placed above the
-tables.}\label{tab1}
-\begin{tabular}{|l|l|l|}
-\hline
-Heading level &  Example & Font size and style\\
-\hline
-Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
-1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
-2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
-3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
-4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
-\hline
-\end{tabular}
-\end{table}
-
-
-\section{Methods}
-
-\section{Experiments}
+\section{Evaluation}
 
 \subsection{Datasets}
 
-\section{Results}
+The CORA dataset is a transductive benchmark dataset in the graph machine learning domain. 
+The dataset contains citations from research in various domains, such as computer science, physics, and biology. Each node in the graph represents an individual paper with undirected edges representing the citation relationship between the paper. 
+The CORA dataset contains a total of 2,708 nodes, which can be classified into one of the seven classes. The features of the nodes contain bag-of-words representations of the title and abstract. Besides the CORA dataset, the CiteSeer data is also utilized.  The CiteSeer dataset is similar to the CORA dataset. It is composed of nodes representing individual papers as well. Similar to CORA, the CiteSeer dataset also has undirected edges indicating the relationship between the papers. However, the CiterSeer dataset has a  bigger graph with six classes. The feature of the CiteSeer nodes is also a bag-of-words representation from the title and abstract. 
+
+
+We split the dataset into training, validation, and test sets, following the standard protocol used in the literature. This allows us to train our models on a subset of the data, tune hyperparameters using the validation set, and evaluate the final performance on the test set. The Cora dataset provides a challenging and realistic scenario for evaluating the effectiveness of attention mechanisms in graph neural networks. 
+
+\subsection{Models}
+This work aims to explore the train/test/val split on the comparison of GAT mechanisms and other baselines. Therefore, we take the GAT with fixed architecture (which can be regarded as having the same aggregation and feature transformation ability) as the base model and compare the discrimination ability on graph with different attention mechanisms. We focus more on the difference caused by attention distribution learned by GATs, thus choosing not to tune the architecture of GATs through careful optimization and parameter tuning. In this paper, we implement two GAT models
+The baseline models and GATs and their fixed architecture are as follows:
+
+\begin{itemize}
+    \item GNN: A multi-layer feedforward network \cite{Allessio2009}. 
+    \item GCN: A  graph convolutional network that aggregates the feature of neighbouring nodes and
+concatenates it with the central node’s feature. We set the layer of GCN to 2 \cite{Kipf2016}.
+    \item GAT: The originally proposed Graph Attention Network. We set the layer of GAT to 2 and multi-head
+number to 8 \cite{veličković2018graph}.
+    \item GATv2: A dynamic graph attention variant that can learn dynamic attention by simply switching the order
+of internal operations in GAT. We set the layer of GATv2 to 2 and the multi-head number to 8 \cite{Brody2021}.
+\end{itemize}
+
+
+\subsection{Experiment}
+In the setup of the experiments, we keep the original architecture implemented in the papers. Also, the number of attention heads is fixed and not a hyperparameter. All previously listed models are evaluated on the CORA and CiteSeer datasets. For a fair evaluation, the training procedure for all the models is equal, including the same Adam optimizer with Xavier initialization. This helps in minimizing any potential bias that could occur from this. However, instead of the split provided by the Planetoid framework, an evaluation is employed over 10 train/validation/test splits \cite{lipton2018troubling}. This k-fold cross-validation, procedures a more reliable insight into the performance of the current models. This addresses the overfitting and generalizability of the models highlights in shortcomings of the evaluation of graph machine learning models \cite{Oleksandr}. Lastly, the metric used for evaluation was the mean test accuracy.
+ 
+\subsection{Results}
+Table \ref{table_1} shows the mean accuracy and standard deviation of all models for the CORA and CiteSeer datasets averaged over 20 splits and 20 random initializations for each split. The sizes of the split were 20 per class; validation set: 500 nodes; and test set: 1000 same as in the Planetoid framework.   The hyperparameters have been optimized on the Cora dataset. The first layer consists of K = 8 attention heads computing F ′ = 8 features each, followed by an exponential linear unit (ELU) for non-linearity. The second layer is used for classification: a single attention head that computes seven features with a softmax activation. During training, we apply L2 regularization with $\lambda$ 0.0005 also the dropout is set at 0.6 for both layers.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{||c c c ||} 
+        \hline
+        Planetoid Split & Cora & CiteSeer  \\ [0.5ex] 
+        \hline\hline
+        GNN & 0.569  & 0.599  \\ 
+        \hline
+        GCN & 0.802  & 0.682   \\
+        \hline
+        GAT & 0.68  & 0.639 \\
+        \hline
+        GATv2 & 0.757 & 0.612 \\
+        \hline
+    \end{tabular}
+    \caption{Performance comparison of different graph neural network models on Cora and CiteSeer datasets. Results are presented with the mean accuracy.}
+    \label{table_1}
+\end{table}
+
+\newpage
+The results of the experiments with the regular planetoid split on the CORA and CiteSeer showed comparable results as \cite{Oleksandr}. Among the implemented GNN approaches the GCNs had the best performance on the planetoid. This is contrary to other results shown in the literature \cite{veličković2018graph}\cite{Brody2021}. Table \ref{table_1} mean test set accuracy and standard deviation in percent averaged over 10 random train/validation/test splits with 10 random weight initializations for all models and all datasets.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{||c c c ||} 
+        \hline
+         Random Split& CORA & CiteSeer  \\ [0.5ex] 
+        \hline\hline
+        GNN & 0.544 $\pm$ 0.03 & 0.527 $\pm$ 0.03  \\ 
+        \hline
+        GCN & 0.79 $\pm$ 0.01 & 0.658 $\pm$ 0.02 \\
+        \hline
+        GAT & 0.68 $\pm$ 1.3 & 0.64 $\pm$ 0.02\\
+        \hline
+        GATv2 & 0.75.7 $\pm$ 1.3 & 0.635 $\pm$ 0.03\\
+        \hline
+    \end{tabular}
+    \caption{Performance comparison of different graph neural network models on Cora and CiteSeer datasets. Results are mean test set accuracy and $\pm$ standard deviation over 20 random train/validation/test.}
+    \label{table_1}
+\end{table}
+
+ A noteworthy finding is that the  GCN is able to achieve the best performance across all models. While this result seems surprising, similar to other findings that have been reported in the literature \cite{Oleksandr}. The unexpected performance of GCN across both CORA and CiteSeer datasets raises intriguing questions and challenges conventional wisdom. The prevailing literature, as referenced in \cite{veličković2018graph} and \cite{Brody2021}, suggested alternative s (that GATs and its variants outperform traditional GCNs on various datasets. These discrepancies of outcomes highlight the importance and need for reproducibility in the graph machine learning. However, it must be noted that the outcomes of the experiment are only limited to few datasets. But the results highlight the sensitivity of GNNs to random factors, such as weight initializations and dataset splits. This emphasizes the need for multiple runs and careful consideration of experimental setups to draw robust conclusions.
+
+
 
 \section{Conclusion}
+This work showed an evaluation of various GNN architectures on the node
+classification task. This work enabled a fair and reproducible comparison of different GNN models. The results highlight the fragility of experimental setups that consider only a single train/validation/test split of the data. The results also surprisingly show that a GCN model can outperform the more sophisticated GAT and GATv2 architectures when results are averaged over multiple data splits. This work shows that improved evaluations are necessary for transductive learning tests as the split highly influences the results and robustness of the evaluations.
 
-
-\noindent Displayed equations are centered and set on a separate
-line.
-\begin{equation}
-x + y = z
-\end{equation}
-Please try to avoid rasterized images for line-art diagrams and
-schemas. Whenever possible, use vector graphics instead (see
-Fig.~\ref{fig1}).
-
-\begin{figure}
-\includegraphics[width=\textwidth]{fig1.eps}
-\caption{A figure caption is always placed below the illustration.
-Please note that short captions are centered, while long ones are
-justified by the macro package automatically.} \label{fig1}
-\end{figure}
-
-\begin{theorem}
-This is a sample theorem. The run-in heading is set in bold, while
-the following text appears in italics. Definitions, lemmas,
-propositions, and corollaries are styled the same way.
-\end{theorem}
-%
-% the environments 'definition', 'lemma', 'proposition', 'corollary',
-% 'remark', and 'example' are defined in the LLNCS documentclass as well.
-%
-\begin{proof}
-Proofs, examples, and remarks have the initial word in italics,
-while the following text appears in normal font.
-\end{proof}
-For citations of references, we prefer the use of square brackets
-and consecutive numbers. Citations using labels or the author/year
-convention are also acceptable. The following bibliography provides
-a sample reference list with entries for journal
-articles~\cite{ref_article1}, an LNCS chapter~\cite{ref_lncs1}, a
-book~\cite{ref_book1}, proceedings without editors~\cite{ref_proc1},
-and a homepage~\cite{ref_url1}. Multiple citations are grouped
-\cite{ref_article1,ref_lncs1,ref_book1},
-\cite{ref_article1,ref_book1,ref_proc1,ref_url1}.
 %
 % ---- Bibliography ----
 %
 % BibTeX users should specify bibliography style 'splncs04'.
 % References will then be sorted and formatted in the correct style.
 %
-% \bibliographystyle{splncs04}
-% \bibliography{mybibliography}
+\newpage
+\bibliographystyle{splncs04}
+\bibliography{reports/refs}
 %
-\begin{thebibliography}{8}
-\bibitem{ref_article1}
-Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
-
-\bibitem{ref_lncs1}
-Author, F., Author, S.: Title of a proceedings paper. In: Editor,
-F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
-Springer, Heidelberg (2016). \doi{10.10007/1234567890}
-
-\bibitem{ref_book1}
-Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
-Location (1999)
-
-\bibitem{ref_proc1}
-Author, A.-B.: Contribution title. In: 9th International Proceedings
-on Proceedings, pp. 1--2. Publisher, Location (2010)
-
-\bibitem{ref_url1}
-LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
-Oct 2017
-\end{thebibliography}
+%
 \end{document}

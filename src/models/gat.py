@@ -1,6 +1,6 @@
-import torch
 class GraphAttentionLayer(nn.Module):
-    def __init__(self, in_features, out_features, dropout=0.6, alpha=0.2, concat=True):
+    """ A graph attention layer (GAT) """
+    def __init__(self, in_features:int, out_features:int, dropout:float=0.6, alpha:float=0.2, concat:bool=True) -> None:
         super(GraphAttentionLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -17,7 +17,7 @@ class GraphAttentionLayer(nn.Module):
         # Dropout layer
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, h, adj):
+    def forward(self, h:torch.Tensor, adj:torch.Tensor) -> torch.Tensor:
         Wh = torch.mm(h, self.W)  # Linear transformation
         N = h.size()[0]
 
@@ -38,7 +38,8 @@ class GraphAttentionLayer(nn.Module):
 
 
 class GAT(nn.Module):
-    def __init__(self, in_features, out_features, num_heads, dropout=0.6, alpha=0.2):
+    """ A graph attention network (GAT) with multiple attention heads. """
+    def __init__(self, in_features:int, out_features:int, num_heads:int, dropout:float=0.6, alpha:float=0.2) -> None:
         super(GAT, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -49,7 +50,7 @@ class GAT(nn.Module):
             GraphAttentionLayer(in_features, out_features, dropout, alpha) for _ in range(num_heads)
         ])
 
-    def forward(self, data):
+    def forward(self, data: object) -> torch.Tensor:
         h, edges_matrix = data.x, data.edge_index
         # Construct the adjacency matrix
         adjacency_matrix = torch.zeros(data.num_nodes, data.num_nodes)
@@ -68,16 +69,3 @@ class GAT(nn.Module):
         output = torch.mean(torch.stack(all_head_outputs), dim=0)
 
         return output
-
-# Create an instance of the GAT model
-model = GAT(in_features, out_features, num_heads)
-
-# Move the model to GPU device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-
-# Move the input tensors to GPU device
-data = data.to(device)
-
-# Run the model
-output = model(data)
